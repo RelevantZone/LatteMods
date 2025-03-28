@@ -42,31 +42,18 @@
 
         public override uint Id { get; set; } = 4101;
         public override string Name { get; set; } = "ENOCH <color=red>\"FOX\"</color> SCRAMBLER";
-        public override string Description { get; set; } = "Distributed to Nine-Tailed Fox units for previous missions of containing the anomaly Scp096. It's specifically designed to hinder hardly a visual to the creatures face. \n<color=red>Precautions that the anomaly can be agitated by other means than looking onto his face.</color>";
+        public override string Description { get; set; } = "Distributed to Nine-Tailed Fox units for previous missions of containing the anomaly designated as Scp096. It's specifically designed to hinder hardly a visual to the creatures face. \n<color=red>Precautions! The anomaly can be agitated by other means than looking onto his face.</color>";
         public override float Weight { get; set; } = 20f;
         public override SpawnProperties SpawnProperties { get; set; } = new SpawnProperties
         {
-            //RoleSpawnPoints =
-            //{
-            //    new RoleSpawnPoint
-            //    {
-            //        Chance = 100,
-            //        Role = PlayerRoles.RoleTypeId.NtfCaptain
-            //    },
-            //    new RoleSpawnPoint
-            //    {
-            //        Chance = 10,
-            //        Role = PlayerRoles.RoleTypeId.NtfSergeant
-            //    }
-            //},
-            //RoomSpawnPoints =
-            //{
-            //    new RoomSpawnPoint
-            //    {
-            //        Chance = 25,
-            //        Room = Exiled.API.Enums.RoomType.Hcz096
-            //    }
-            //}
+            RoomSpawnPoints =
+            {
+                new RoomSpawnPoint
+                {
+                    Chance = 100,
+                    Room = Exiled.API.Enums.RoomType.Hcz096
+                }
+            }
         };
 
         public Broadcast MinimumBattery = new Broadcast("Scrambler battery is too <color=red>low</color>!");
