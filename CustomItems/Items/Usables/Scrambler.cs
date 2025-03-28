@@ -3,18 +3,15 @@
     using System;
     using System.Collections.Generic;
     using System.ComponentModel;
-    using System.Linq;
     using Exiled.API.Features;
     using Exiled.API.Features.Attributes;
     using Exiled.API.Features.Spawn;
-    using Exiled.CustomItems.API.EventArgs;
     using Exiled.CustomItems.API.Features;
     using Exiled.Events.EventArgs.Player;
     using Exiled.Events.EventArgs.Scp096;
     using Exiled.Events.EventArgs.Server;
     using MEC;
     using PlayerRoles.FirstPersonControl.Thirdperson.Subcontrollers;
-    using UnityEngine.PlayerLoop;
     using Utils.NonAllocLINQ;
     using YamlDotNet.Serialization;
     using Events = Exiled.Events.Handlers;
@@ -45,7 +42,7 @@
 
         public override uint Id { get; set; } = 4101;
         public override string Name { get; set; } = "ENOCH <color=red>\"FOX\"</color> SCRAMBLER";
-        public override string Description { get; set; }
+        public override string Description { get; set; } = "Distributed to Nine-Tailed Fox units for previous missions of containing the anomaly Scp096. It's specifically designed to hinder hardly a visual to the creatures face. \n<color=red>Precautions that the anomaly can be agitated by other means than looking onto his face.</color>";
         public override float Weight { get; set; } = 20f;
         public override SpawnProperties SpawnProperties { get; set; } = new SpawnProperties
         {

@@ -8,7 +8,6 @@
     using Exiled.Events.EventArgs.Player;
     using InventorySystem.Items.Firearms.Attachments;
     using PlayerRoles;
-    using YamlDotNet.Serialization;
 
     [CustomItem(ItemType.GunE11SR)]
     public class Sniper : CustomWeapon
@@ -77,6 +76,11 @@
 
             ev.Amount *= mod;
             base.OnHurting(ev);
+        }
+
+        protected override void OnReloaded(ReloadedWeaponEventArgs ev)
+        {
+            ev.Firearm.MagazineAmmo = 1;
         }
     }
 }

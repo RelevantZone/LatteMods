@@ -16,7 +16,7 @@
     [CustomItem(ItemType.GunCOM18)]
     public class Axiom : CustomWeapon
     {
-        private Dictionary<ushort, ProjectileType> LoadedAmmo = [];
+        private Dictionary<ushort, ProjectileType> _loaded = [];
         public override uint Id { get; set; } = 2101;
         public override string Name { get; set; } = "<b><color=red>AXIOM</color></b>-5";
         public override string Description { get; set; } = "An improvised distribution of a grenade launcher developed with advanced technologies capable of instantly channeling explosive effects through photon lasers.";
@@ -89,7 +89,7 @@
                         {
                             Log.Info($"{nameof(Axiom)}: Found ammunition for weapon, destroying item with projectile {Enum.GetName(typeof(ProjectileType), type)}"); ;
 
-                            LoadedAmmo[ev.Firearm.Serial] = type;
+                            _loaded[ev.Firearm.Serial] = type;
                             item.Destroy();
                             break;
                         }
@@ -113,7 +113,7 @@
         protected override void OnShot(ShotEventArgs ev)
         {
             ProjectileType grenadeType;
-            if (! LoadedAmmo.TryGetValue(ev.Firearm.Serial, out grenadeType))
+            if (! _loaded.TryGetValue(ev.Firearm.Serial, out grenadeType))
             {
                 grenadeType = ProjectileType.FragGrenade;
             }

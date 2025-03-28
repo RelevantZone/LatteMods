@@ -23,14 +23,7 @@
 
             if (File.Exists(itemConfig))
             {
-                var defConf = new Configs.Items();
                 ItemsConfig = Loader.Deserializer.Deserialize<Configs.Items>(File.ReadAllText(itemConfig));
-
-                if (defConf.Version > ItemsConfig.Version)
-                {
-                    ItemsConfig = defConf;
-                }
-
                 File.WriteAllText(itemConfig, Loader.Serializer.Serialize(ItemsConfig));
             }
             else
