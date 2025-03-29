@@ -17,6 +17,9 @@
     using Events = Exiled.Events.Handlers;
     public enum FortuneType
     {
+        [Description("Nothing")]
+        None,
+
         [Description("Supply of basic survival kit, pistol and medkit")]
         Survival,
 
@@ -73,10 +76,11 @@
 
         public Dictionary<FortuneType, float> Rewards = new Dictionary<FortuneType, float>
         {
-            [FortuneType.Survival] = 250,
-            [FortuneType.Blessed] = 30,
-            [FortuneType.Armed] = 125,
-            [FortuneType.Evolution] = 7,
+            [FortuneType.None] = 1,
+            [FortuneType.Survival] = 0.75f,
+            [FortuneType.Blessed] = 1 / 2500,
+            [FortuneType.Armed] = 1 / 1000,
+            [FortuneType.Evolution] = 1 / 5000,
         };
 
         public List<RoleTypeId> Evolutions = [
@@ -131,6 +135,9 @@
         {
             switch (type)
             {
+                case FortuneType.None:
+                    player.ShowHint("You have been <color=yellow>fortuned</color> to get nothing )\r\n💀)\r\n💀)\r\n💀");
+                    break;
                 case FortuneType.Survival:
                     player.AddItem(ItemType.GunFSP9);
                     player.AddItem(ItemType.Medkit);

@@ -86,6 +86,7 @@
             {
                 _loaded.Add(item.Serial, ProjectileType.FragGrenade);
             }
+
             base.OnAcquired(player, item, displayMessage);
         }
 
@@ -110,7 +111,7 @@
                 {
                     if (TryGetProjectile(item, out type))
                     {
-                        _loaded[item.Serial] = type;
+                        _loaded[ev.Firearm.Serial] = type;
                         item.Destroy();
                     }
                 }
@@ -148,6 +149,8 @@
                 {
                     UsableItemsController.GlobalItemCooldowns[ev.Firearm.Serial] = Time.timeSinceLevelLoad + Cooldown;
                 }
+
+                _loaded.Remove(ev.Item.Serial);
                 ev.Player.ShowHitMarker(size: 3);
             }
         }
