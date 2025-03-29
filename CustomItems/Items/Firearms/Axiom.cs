@@ -113,6 +113,7 @@
                     {
                         _loaded[ev.Firearm.Serial] = type;
                         item.Destroy();
+                        break;
                     }
                 }
 
