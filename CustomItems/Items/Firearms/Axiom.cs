@@ -14,6 +14,8 @@
     using Exiled.CustomItems.API.Features;
     using Exiled.Events.EventArgs.Player;
     using YamlDotNet.Serialization;
+    using InventorySystem.Items.Usables;
+    using UnityEngine;
 
     [CustomItem(ItemType.GunCOM18)]
     public class Axiom : CustomWeapon
@@ -58,6 +60,9 @@
         [Description("Include throwable festive items such as coal, rock, snowball, etc.")]
         public bool IgnoreFestiveItems = true;
 
+        [Description("Apply cooldown for weapon to prevent spamming")]
+        public float Cooldown = 0f;
+
         protected override void SubscribeEvents()
         {
             base.SubscribeEvents();
@@ -93,11 +98,11 @@
                 return;
             }
 
-            Log.Debug($"{nameof(Axiom)}: Invoked reloading for weapon");
+            Log.Info($"{nameof(Axiom)}: Invoked reloading for weapon");
             
             if (UseGrenades)
             {
-                Log.Debug($"{nameof(Axiom)}: Using grenades as substitute for weapon ammunition");
+                Log.Info($"{nameof(Axiom)}: Using grenades as substitute for weapon ammunition");
 
                 ProjectileType type = ProjectileType.None;
 
@@ -112,7 +117,7 @@
 
                 if (type == ProjectileType.None)
                 {
-                    Log.Debug($"{nameof(Axiom)}: Initiated reloading sequence, but no ammunition was found");
+                    Log.Info($"{nameof(Axiom)}: Initiated reloading sequence, but no ammunition was found");
                     ev.IsAllowed = false;
                 }
             }
@@ -138,21 +143,34 @@
                 {
                     projectile.FuseTime = 0.1f;
                 }
+
+                if (Cooldown > 0)
+                {
+                    UsableItemsController.GlobalItemCooldowns[ev.Firearm.Serial] = Time.timeSinceLevelLoad + Cooldown;
+                }
+                ev.Player.ShowHitMarker(size: 3);
             }
+        }
+
+        protected override void OnHurting(HurtingEventArgs ev)
+        {
+            ev.IsAllowed = false;
         }
 
         internal bool TryGetProjectile(Item item, out ProjectileType type)
         {
-            if (!(item.IsThrowable && 
-                (IgnoreModdedGrenades && TryGet(item, out var _) || 
-                (IgnoreFestiveItems && _festiveItems.Contains(item.Type)))))
+            type = ProjectileType.None;
+
+            if (item.IsThrowable)
             {
-                type = ProjectileType.None;
-                return false;
+                if (IgnoreModdedGrenades && TryGet(item, out var _) ||
+                    (IgnoreFestiveItems && _festiveItems.Contains(item.Type))) return false;
+
+                type = item.Type.GetProjectileType();
+                return true;
             }
 
-            type = item.Type.GetProjectileType();
-            return true;
+            return false;
         }
     }
 }
