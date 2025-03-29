@@ -35,7 +35,7 @@
             {
                 if (ev.Firearm.TotalAmmo > firearm.ClipSize)
                 {
-                    int num1 = Math.Max(firearm.ClipSize - 1, 0);
+                    int num1 = Math.Max(ev.Firearm.TotalAmmo - (firearm.ClipSize - 1), 0);
                     if (num1 > 0)
                     {
                         ev.Player.AddAmmo(ev.Firearm.AmmoType, (ushort)(ev.Firearm.MagazineAmmo - num1));
