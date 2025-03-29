@@ -1,7 +1,10 @@
 ﻿namespace CustomItems
 {
+    using System.ComponentModel;
+    using System.Linq;
     using Exiled.API.Enums;
     using Exiled.API.Features;
+    using Exiled.CustomItems.API;
     using Exiled.CustomItems.API.Features;
     using InventorySystem.Items.Firearms.Modules;
 
@@ -15,26 +18,47 @@
 
         public override void OnEnabled()
         {
+            Log.Info($"{Prefix} is enabling main plugin");
             PlayerEvent = new Handlers.Player();
 
-            Config.LoadConfigs();
-            CustomItem.RegisterItems(overrideClass: Config.ItemsConfig);
-
             PlayerEvent.SubscribeEvents();
+
+            RegisterItems();
             base.OnEnabled();
         }
 
         public override void OnReloaded()
         {
-            Config.LoadConfigs();
-
+            Log.Info($"{Prefix} is reloaded");
             base.OnReloaded();
         }
 
         public override void OnDisabled()
         {
+            Log.Info($"{Prefix} is disabled");
             PlayerEvent.UnsubscribeEvents();
+
+            UnregisterItems();
             base.OnDisabled();
+        }
+
+        public void RegisterItems()
+        {
+            Config.LoadConfigs();
+            CustomItem.RegisterItems(overrideClass: Config.ItemsConfig);
+        }
+
+        // The method provided by lib doesn't work
+        public void UnregisterItems()
+        {
+            for (var index = 0; index < CustomItem.Registered.Count; index++)
+            {
+                var item = CustomItem.Registered.ElementAt(index);
+                if (item is CustomItem customItem)
+                {
+                    item.Unregister();
+                }
+            }
         }
     }
 }

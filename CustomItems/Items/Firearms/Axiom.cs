@@ -6,7 +6,9 @@
     using System.Linq;
     using Exiled.API.Enums;
     using Exiled.API.Features;
+    using Exiled.API.Extensions;
     using Exiled.API.Features.Attributes;
+    using Exiled.API.Features.Items;
     using Exiled.API.Features.Pickups.Projectiles;
     using Exiled.API.Features.Spawn;
     using Exiled.CustomItems.API.Features;
@@ -16,13 +18,19 @@
     [CustomItem(ItemType.GunCOM18)]
     public class Axiom : CustomWeapon
     {
+        private readonly ItemType[] _festiveItems = new ItemType[3]
+        {
+            ItemType.Coal,
+            ItemType.SpecialCoal,
+            ItemType.Snowball
+        };
         private Dictionary<ushort, ProjectileType> _loaded = [];
         public override uint Id { get; set; } = 2101;
         public override string Name { get; set; } = "<b><color=red>AXIOM</color></b>-5";
         public override string Description { get; set; } = "An improvised distribution of a grenade launcher developed with advanced technologies capable of instantly channeling explosive effects through photon lasers.";
         public override float Damage { get; set; } = 0.5f;
         public override float Weight { get; set; } = 30f;
-        public override byte ClipSize { get; set; } = 0;
+        public override byte ClipSize { get; set; } = 1;
         public override SpawnProperties SpawnProperties { get; set; } = new SpawnProperties
         {
             RoomSpawnPoints =
@@ -44,6 +52,12 @@
         [Description("The ammunition for the weapon will be using grenades, false to only use weaponry ammo")]
         public bool UseGrenades = true;
 
+        [Description("Ignore custom grenades used as ammo")]
+        public bool IgnoreModdedGrenades = true;
+
+        [Description("Include throwable festive items such as coal, rock, snowball, etc.")]
+        public bool IgnoreFestiveItems = true;
+
         protected override void SubscribeEvents()
         {
             base.SubscribeEvents();
@@ -54,77 +68,91 @@
             base.UnsubscribeEvents();
         }
 
+        protected override void OnWaitingForPlayers()
+        {
+            _loaded.Clear();
+
+            base.OnWaitingForPlayers();
+        }
+
+        protected override void OnAcquired(Player player, Item item, bool displayMessage)
+        {
+            if (item is Firearm firearm && firearm.TotalAmmo == ClipSize && ! _loaded.TryGetValue(firearm.Serial, out var type))
+            {
+                _loaded.Add(item.Serial, ProjectileType.FragGrenade);
+            }
+            base.OnAcquired(player, item, displayMessage);
+        }
+
         protected override void OnReloading(ReloadingWeaponEventArgs ev)
         {
-            Log.Info($"{nameof(Axiom)}: Invoked reloading for weapon");
+            Log.Info($"{nameof(Axiom)}: Tracked reloading weapon");
+            if (_loaded.ContainsKey(ev.Firearm.Serial))
+            {
+                ev.IsAllowed = false;
+                return;
+            }
+
+            Log.Debug($"{nameof(Axiom)}: Invoked reloading for weapon");
             
-            ev.IsAllowed = true;
             if (UseGrenades)
             {
-                Log.Info($"{nameof(Axiom)}: Using grenades as substitute for weapon ammunition");
+                Log.Debug($"{nameof(Axiom)}: Using grenades as substitute for weapon ammunition");
 
-                ProjectileType? grenadeType = null;
+                ProjectileType type = ProjectileType.None;
 
                 foreach (var item in ev.Player.Items)
                 {
-                    if (item.IsThrowable)
+                    if (TryGetProjectile(item, out type))
                     {
-                        switch (item.Type)
-                        {
-                            case ItemType.GrenadeHE:
-                                grenadeType = ProjectileType.FragGrenade;
-                                break;
-                            case ItemType.GrenadeFlash:
-                                grenadeType = ProjectileType.Flashbang;
-                                break;
-                            case ItemType.SCP018:
-                                grenadeType = ProjectileType.Scp018;
-                                break;
-                            case ItemType.SCP2176:
-                                grenadeType = ProjectileType.Scp2176;
-                                break;
-                        }
-
-                        if (grenadeType != null && grenadeType is ProjectileType type)
-                        {
-                            Log.Info($"{nameof(Axiom)}: Found ammunition for weapon, destroying item with projectile {Enum.GetName(typeof(ProjectileType), type)}"); ;
-
-                            _loaded[ev.Firearm.Serial] = type;
-                            item.Destroy();
-                            break;
-                        }
+                        _loaded[item.Serial] = type;
+                        item.Destroy();
                     }
                 }
 
-                if (grenadeType == null)
+                if (type == ProjectileType.None)
                 {
-                    Log.Info($"{nameof(Axiom)}: Initiated reloading sequence, but no ammunition was found");
+                    Log.Debug($"{nameof(Axiom)}: Initiated reloading sequence, but no ammunition was found");
                     ev.IsAllowed = false;
                 }
             }
         }
 
-        protected override void OnReloaded(ReloadedWeaponEventArgs ev)
-        {
-            // Guard check >:C
-            ev.Firearm.MagazineAmmo = 0;
-        }
-
         protected override void OnShot(ShotEventArgs ev)
         {
-            ProjectileType grenadeType;
-            if (! _loaded.TryGetValue(ev.Firearm.Serial, out grenadeType))
+            if (!_loaded.TryGetValue(ev.Firearm.Serial, out var type))
             {
-                grenadeType = ProjectileType.FragGrenade;
+                if (!UseGrenades)
+                {
+                    type = ProjectileType.FragGrenade;
+                } else
+                {
+                    type = ProjectileType.None;
+                }
             }
 
-            if (Projectile.CreateAndSpawn(grenadeType, ev.Position, previousOwner: ev.Player).Is(out TimeGrenadeProjectile projectile))
+            if (type != ProjectileType.None &&
+                Projectile.CreateAndSpawn(type, ev.Position, previousOwner: ev.Player).Is(out TimeGrenadeProjectile projectile))
             {
-                if (grenadeType != ProjectileType.Scp018)
+                if (type != ProjectileType.Scp018)
                 {
                     projectile.FuseTime = 0.1f;
                 }
             }
+        }
+
+        internal bool TryGetProjectile(Item item, out ProjectileType type)
+        {
+            if (!(item.IsThrowable && 
+                (IgnoreModdedGrenades && TryGet(item, out var _) || 
+                (IgnoreFestiveItems && _festiveItems.Contains(item.Type)))))
+            {
+                type = ProjectileType.None;
+                return false;
+            }
+
+            type = item.Type.GetProjectileType();
+            return true;
         }
     }
 }

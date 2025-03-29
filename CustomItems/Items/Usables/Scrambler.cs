@@ -35,6 +35,9 @@
     public class Scrambler : CustomItem
     {
         [YamlIgnore]
+        private readonly string _playerSessionKey = "PlayerScramblerSerial";
+
+        [YamlIgnore]
         private readonly List<ScramblerState> states = new List<ScramblerState>();
 
         [YamlIgnore]
@@ -66,13 +69,16 @@
         public float MaxRechargeDuration = 120f;
 
         [Description("Battery usage when it is used by a player per seconds")]
-        public float DrainMultiplier = 0.01f;
+        public float DrainMultiplier = 0.04f;
 
         [Description("If battery usage was to be calculated by percentage (ActiveUsagePerSeconds / MaxRechargeDuration)")]
         public bool DrainInPercentage = true;
 
         [Description("The minimum battery in percentage for using scrambler")]
-        public float MinimumBatteryForUse = 20f;
+        public double MinimumBatteryForUse = 20.0;
+
+        [Description("The percentage of battery that will be charged for first-time use")]
+        public float DefaultBattery = 0.5f;
 
         protected override void SubscribeEvents()
         {
@@ -176,6 +182,7 @@
             state.IsActive = true;
             state.Owner = ev.Player;
 
+            ev.Player.SessionVariables.Add(_playerSessionKey, state.Serial);
             ev.Player.ReferenceHub.EnableWearables(WearableElements.Scp1344Goggles);
         }
 
@@ -216,7 +223,7 @@
         {
             if (! states.TryGetFirst(x => x.Serial == serial, out var state))
             {
-                state = new ScramblerState(serial, battery: MaxRechargeDuration / 2);
+                state = new ScramblerState(serial, battery: MaxRechargeDuration * DefaultBattery);
                 states.Add(state);
             }
 
@@ -230,6 +237,15 @@
                 return false;
             }
 
+            if (player.TryGetSessionVariable(_playerSessionKey, out int serial) && states.TryGetFirst(x => x.Serial == serial, out var state))
+            {
+                if (forceDisable)
+                {
+                    DisableScrambler(state);
+                }
+                return true;
+            }
+
             foreach (var item in player.Items)
             {
                 if (! Check(item))
@@ -237,7 +253,7 @@
                     continue;
                 }
 
-                var state = GetState(item.Serial);
+                state = GetState(item.Serial);
                 if (state.IsActive)
                 {
                     if (forceDisable)
@@ -255,7 +271,9 @@
         {
             if (state.Owner != null)
             {
+                state.Owner.CurrentItem = null;
                 state.Owner.ShowHint(UnequipScrambler.Content);
+                state.Owner.SessionVariables.Remove(_playerSessionKey);
                 state.Owner.ReferenceHub.DisableWearables(WearableElements.Scp1344Goggles);
             }
 

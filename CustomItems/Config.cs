@@ -1,5 +1,6 @@
 ﻿namespace CustomItems
 {
+    using System.ComponentModel;
     using System.IO;
     using Exiled.API.Features;
     using Exiled.API.Interfaces;
@@ -11,6 +12,9 @@
         public bool Debug { get; set; } = true; 
         public string Configs = Path.Combine(Paths.Configs, "LatteMods");
         public string ItemConfigFile = "items.yml";
+
+        [Description("Adds temporary fixes for custom items")]
+        public bool ApplyTemporaryPatches = true;
 
         public Configs.Items ItemsConfig { get; private set; }
         public void LoadConfigs()
