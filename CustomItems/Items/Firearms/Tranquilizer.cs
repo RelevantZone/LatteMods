@@ -1,6 +1,7 @@
 ﻿namespace CustomItems.Items.Firearms
 {
     using System.Collections.Generic;
+    using System.ComponentModel;
     using CustomPlayerEffects;
     using Exiled.API.Features;
     using Exiled.API.Features.Attributes;
@@ -87,10 +88,20 @@
             [RoleTypeId.Scp0492] = 10,
         };
 
+        [Description("The duration for how long will tranquilizer effects will last")]
         public float Duration = 5f;
-        public float ResistenceModifier = 1.5f;
-        public float MaxResistence = 100f;
+
+        [Description("Modifies the player resistence every time they get tranquilized")]
+        public float ResistanceModifier = 1.5f;
+
+        [Description("The maximum amount of resistence they can get")]
+        public float MaximumResistance = 100f;
+
+        [Description("Should player drop items when they get tranquilized")]
         public bool DropItems = false;
+
+        [Description("The default resistance for roles that don't have immunities")]
+        public float DefaultResistance = 1f;
 
         protected override void SubscribeEvents()
         {
@@ -171,18 +182,12 @@
             Log.Info($"{nameof(Tranquilizer)}: Invoked {nameof(Sedate)} for player {player.DisplayNickname}({player.UserId})");
             if (! ignoreResistence)
             {
-                float num = 1;
-                float random = Random.Range(0, MaxResistence + 1);
+                float num;
+                float random = Random.Range(0, MaximumResistance + 1);
 
-                if (! _immune.TryGetValue(player, out num))
+                if (! (_immune.TryGetValue(player, out num) && Immunity.TryGetValue(player.Role.Type, out num)))
                 {
-                    if (Immunity.ContainsKey(player.Role.Type))
-                    {
-                        num = System.Math.Min(Immunity[player.Role.Type], MaxResistence);
-                    } else
-                    {
-                        num = 1;
-                    }
+                    num = DefaultResistance;
                 }
 
                 if (num > random)
@@ -191,8 +196,8 @@
                     return;
                 }
 
-                duration -= Duration * (num / MaxResistence);
-                num *= ResistenceModifier;
+                duration -= Duration * (num / MaximumResistance);
+                num *= ResistanceModifier;
                 _immune[player] = num;
 
                 Log.Info($"{nameof(Tranquilizer)}: Sedated player, resistance changed to {num} with prolonged duration {duration}s");

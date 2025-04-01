@@ -3,8 +3,10 @@
     using System;
     using System.Collections.Generic;
     using System.ComponentModel;
+    using System.Linq;
     using Exiled.API.Features;
     using Exiled.API.Features.Attributes;
+    using Exiled.API.Features.Items;
     using Exiled.API.Features.Spawn;
     using Exiled.CustomItems.API.Features;
     using Exiled.Events.EventArgs.Player;
@@ -16,29 +18,12 @@
     using YamlDotNet.Serialization;
     using Events = Exiled.Events.Handlers;
 
-    internal class ScramblerState
-    {
-        public int Serial;
-        public Player Owner;
-        public float Battery;
-        public bool IsActive;
-
-        internal ScramblerState(int serial, float battery = 50)
-        {
-            Serial = serial;
-            Battery = battery;
-            IsActive = false;
-        }
-    }
-
     [CustomItem(ItemType.SCP1344)]
     public class Scrambler : CustomItem
     {
-        [YamlIgnore]
-        private readonly string _playerSessionKey = "PlayerScramblerSerial";
-
-        [YamlIgnore]
-        private readonly List<ScramblerState> states = new List<ScramblerState>();
+        private readonly string _playerSessionKey = $"Player{nameof(Scrambler)}Serial";
+        private readonly List<Item> actives = new List<Item>();
+        private readonly Dictionary<int, float> batteries = new Dictionary<int, float>();
 
         [YamlIgnore]
         public readonly List<CoroutineHandle> coroutines = new List<CoroutineHandle>();
@@ -49,14 +34,14 @@
         public override float Weight { get; set; } = 20f;
         public override SpawnProperties SpawnProperties { get; set; } = new SpawnProperties
         {
-            RoomSpawnPoints =
-            {
-                new RoomSpawnPoint
-                {
-                    Chance = 100,
-                    Room = Exiled.API.Enums.RoomType.Hcz096
-                }
-            }
+            //RoomSpawnPoints =
+            //{
+            //    new RoomSpawnPoint
+            //    {
+            //        Chance = 100,
+            //        Room = Exiled.API.Enums.RoomType.Hcz096
+            //    }
+            //}
         };
 
         public Broadcast MinimumBattery = new Broadcast("Scrambler battery is too <color=red>low</color>!");
@@ -80,54 +65,56 @@
         [Description("The percentage of battery that will be charged for first-time use")]
         public float DefaultBattery = 0.5f;
 
-        protected override void SubscribeEvents()
-        {
-            Events.Server.RoundStarted += OnRoundStarted;
-            Events.Server.RoundEnded += OnRoundEnded;
-            Events.Scp096.AddingTarget += OnAddingTarget;
-            Events.Player.UsingItem += OnUsingItem;
-            Events.Player.UsingItemCompleted += OnUsingItemCompleted;
-            Events.Player.ChangingItem += OnChangingItem;
+        //protected override void SubscribeEvents()
+        //{
+        //    Events.Server.RoundEnded += OnRoundEnded;
+        //    Events.Scp096.AddingTarget += OnAddingTarget;
+        //    Events.Player.UsingItem += OnUsingItem;
+        //    Events.Player.UsingItemCompleted += OnUsingItemCompleted;
+        //    //Events.Player.ChangingItem += OnChangingItem;
 
-            base.SubscribeEvents();
-        }
+        //    base.SubscribeEvents();
+        //}
 
-        protected override void UnsubscribeEvents()
-        {
-            Events.Server.RoundStarted -= OnRoundStarted;
-            Events.Server.RoundEnded -= OnRoundEnded;
-            Events.Scp096.AddingTarget -= OnAddingTarget;
-            Events.Player.UsingItem -= OnUsingItem;
-            Events.Player.UsingItemCompleted -= OnUsingItemCompleted;
-            Events.Player.ChangingItem -= OnChangingItem;
+        //protected override void UnsubscribeEvents()
+        //{
+        //    Events.Server.RoundEnded -= OnRoundEnded;
+        //    Events.Scp096.AddingTarget -= OnAddingTarget;
+        //    Events.Player.UsingItem -= OnUsingItem;
+        //    Events.Player.UsingItemCompleted -= OnUsingItemCompleted;
+        //    //Events.Player.ChangingItem -= OnChangingItem;
 
-            base.UnsubscribeEvents();
-        }
+        //    base.UnsubscribeEvents();
+        //}
 
-        protected override void OnChanging(ChangingItemEventArgs ev)
-        {
-            if (Check(ev.Item))
-            {
-                ShowRemainingBattery(ev.Player, ev.Item.Serial, showDescription: true);
-            };
-        }
+        //protected override void OnDroppingItem(DroppingItemEventArgs ev)
+        //{
+        //    if (actives.Contains(ev.Item))
+        //    {
+        //        actives.Remove(ev.Item);
+        //        ev.Player.SessionVariables.Remove(_playerSessionKey);
+        //        ev.Player.ReferenceHub.DisableWearables(WearableElements.Scp1344Goggles);
+        //    }
+        //}
 
-        private void OnChangingItem(ChangingItemEventArgs ev)
-        {
-            if (! Check(ev.Item))
-            {
-                if (IsActive(ev.Player) && states.TryGetFirst(x => x.IsActive == true && x.Owner == ev.Player, out var state))
-                {
-                    DisableScrambler(state);
-                }
-                return;
-            }
-        }
+        //protected override void OnChanging(ChangingItemEventArgs ev)
+        //{
+        //    if (Check(ev.Item))
+        //    {
+        //        ShowRemainingBattery(ev.Player, ev.Item.Serial, showDescription: true);
+        //    };
+        //}
 
-        private void OnRoundStarted()
-        {
-            coroutines.Add(Timing.RunCoroutine(Update()));
-        }
+        //protected override void OnAcquired(Player player, Item item, bool displayMessage)
+        //{
+        //    if (! batteries.ContainsKey(item.Serial))
+        //    {
+        //        GetRemainingBattery(item.Serial);
+        //        Timing.RunCoroutine(Update(item), item.Base.gameObject);
+        //    }
+
+        //    base.OnAcquired(player, item, displayMessage);
+        //}
 
         private void OnRoundEnded(RoundEndedEventArgs ev)
         {
@@ -144,6 +131,7 @@
             if (IsActive(ev.Player) && ev.IsLooking)
             {
                 ev.IsAllowed = false;
+                return;
             }
         }
 
@@ -154,15 +142,16 @@
                 return;
             }
 
-            if (IsActive(ev.Player, forceDisable: true))
+            if (TryGetActiveItem(ev.Player, out var item))
             {
                 ev.IsAllowed = false;
-                ev.Player.CurrentItem = null;
+                actives.Remove(item);
+                ev.Player.SessionVariables.Remove(_playerSessionKey);
+                ev.Player.ReferenceHub.DisableWearables(WearableElements.Scp1344Goggles);
                 return;
             }
 
-            var state = GetState(ev.Item.Serial);
-            if (ToPercentage(state.Battery, MaxRechargeDuration) <= MinimumBatteryForUse)
+            if (GetBatteryPercentage(GetRemainingBattery(ev.Item.Serial)) <= MinimumBatteryForUse)
             {
                 ev.IsAllowed = false;
                 ev.Player.ShowHint(new Hint(MinimumBattery.Content));
@@ -177,141 +166,121 @@
             }
 
             ev.IsAllowed = false;
-
-            var state = GetState(ev.Item.Serial);
-            state.IsActive = true;
-            state.Owner = ev.Player;
-
-            ev.Player.SessionVariables.Add(_playerSessionKey, state.Serial);
+            actives.Add(ev.Item);
+            ev.Player.SessionVariables.Add(_playerSessionKey, ev.Item.Serial);
             ev.Player.ReferenceHub.EnableWearables(WearableElements.Scp1344Goggles);
         }
 
-        private IEnumerator<float> Update()
+        private IEnumerator<float> Update(Item item)
         {
-            while (! Round.IsEnded)
+            while (true)
             {
-                foreach (var state in states)
-                {
-                    ProcessBattery(state);
+                ProcessBattery(item);
 
-                    if (state.Battery <= 0)
-                    {
-                        state.Battery = 0;
-                        DisableScrambler(state);
-                    }
+                var battery = GetRemainingBattery(item.Serial);
+
+                if (IsActive(item) && battery <= 0)
+                {
+                    batteries[item.Serial] = 0;
+                    actives.Remove(item);
+                    item.Owner.SessionVariables.Remove(_playerSessionKey);
+                    item.Owner.ReferenceHub.DisableWearables(WearableElements.Scp1344Goggles);
                 }
 
-                yield return Timing.WaitForSeconds(1f);
+                yield return Timing.WaitForOneFrame;
             }
         }
 
-        private void ProcessBattery(ScramblerState state)
+        private void ProcessBattery(Item item)
         {
-            if (state.IsActive)
+            var battery = GetRemainingBattery(item.Serial);
+            if (IsActive(item))
             {
-                state.Battery -= DrainInPercentage ? (MaxRechargeDuration * DrainMultiplier) : DrainMultiplier;
-
-                if (state.Owner != null) ShowRemainingBattery(state.Owner, state);
-            }
-            else
-            {
-                state.Battery = Math.Min(state.Battery + 1, MaxRechargeDuration);
-            }
-        }
-
-        private ScramblerState GetState(int serial)
-        {
-            if (! states.TryGetFirst(x => x.Serial == serial, out var state))
-            {
-                state = new ScramblerState(serial, battery: MaxRechargeDuration * DefaultBattery);
-                states.Add(state);
-            }
-
-            return state;
-        }
-
-        private bool IsActive(Player player, bool forceDisable = false)
-        {
-            if (! (player.IsAlive && player.IsHuman && player.Items.Count > 0))
-            {
-                return false;
-            }
-
-            if (player.TryGetSessionVariable(_playerSessionKey, out int serial) && states.TryGetFirst(x => x.Serial == serial, out var state))
-            {
-                if (forceDisable)
+                var num = DrainMultiplier;
+                if (DrainInPercentage)
                 {
-                    DisableScrambler(state);
-                }
-                return true;
-            }
-
-            foreach (var item in player.Items)
-            {
-                if (! Check(item))
-                {
-                    continue;
+                    num = MaxRechargeDuration * DrainMultiplier;
                 }
 
-                state = GetState(item.Serial);
-                if (state.IsActive)
-                {
-                    if (forceDisable)
-                    {
-                        DisableScrambler(state);
-                    }
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private void DisableScrambler(ScramblerState state)
-        {
-            if (state.Owner != null)
+                battery -= num;
+                ShowRemainingBattery(item.Owner, battery);
+            } else
             {
-                state.Owner.CurrentItem = null;
-                state.Owner.ShowHint(UnequipScrambler.Content);
-                state.Owner.SessionVariables.Remove(_playerSessionKey);
-                state.Owner.ReferenceHub.DisableWearables(WearableElements.Scp1344Goggles);
+                battery += 1f;
             }
 
-            state.Owner = null;
-            state.IsActive = false;
+            batteries[item.Serial] = battery;
         }
 
-        private void ShowRemainingBattery(Player player, int itemSerial, bool showDescription = false) => ShowRemainingBattery(player, GetState(itemSerial), showDescription);
-
-        private void ShowRemainingBattery(Player player, ScramblerState state, bool showDescription = false)
+        private void ShowRemainingBattery(Player player, float battery, bool showDescription = false)
         {
-            var battery = ToPercentage(state.Battery, MaxRechargeDuration);
+            var percentage = GetBatteryPercentage(battery);
             var color = "green";
-            if (battery >= MinimumBatteryForUse && battery < 80)
+            if (percentage >= MinimumBatteryForUse && percentage < 80)
             {
                 color = "yellow";
             }
-            else if (battery < MinimumBatteryForUse)
+            else if (percentage < MinimumBatteryForUse)
             {
                 color = "red";
             }
 
             if (RemainingBattery.Show)
             {
-                if (showDescription)
-                {
-                    player.ShowHint(new Hint(string.Format(RemainingBattery.Content, Math.Truncate((battery / MaxRechargeDuration) * 100), color, $"\n{Description}")));
-                }
-                else
-                {
-                    player.ShowHint(new Hint(string.Format(RemainingBattery.Content, Math.Truncate((battery / MaxRechargeDuration) * 100), color, "")));
-                }
+                player.ShowHint(new Hint(string.Format(RemainingBattery.Content, percentage, color, showDescription ? $"\n{Description}" : "")));
             }
         }
 
-        public static double ToPercentage(float remaining, float max)
+        private bool IsActive(Item item)
         {
-            return Math.Truncate((remaining / max) * 100);
+            if (item.Owner != null) return IsActive(item.Owner);
+            return false;
+        }
+
+        private bool IsActive(Player player)
+        {
+            if (player.TryGetSessionVariable(_playerSessionKey, out int serial) && actives.Any(x => x.Serial == serial))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryGetActiveItem(Player player, out Item item)
+        {
+            if (player.TryGetSessionVariable(_playerSessionKey, out int serial) && actives.TryGetFirst(x => x.Serial == serial, out item))
+            {
+                return true;
+            }
+
+            item = null;
+            return false;
+        }
+
+        private Item GetActiveItem(Player player)
+        {
+            if (player.TryGetSessionVariable(_playerSessionKey, out int serial) && actives.TryGetFirst(x => x.Serial == serial, out Item item))
+            {
+                return item;
+            }
+
+            return null;
+        }
+
+        private float GetRemainingBattery(ushort serial)
+        {
+            if (!batteries.TryGetValue(serial, out var battery))
+            {
+                battery = MaxRechargeDuration * DefaultBattery;
+                batteries[serial] = battery;
+            }
+            return battery;
+        }
+
+        private double GetBatteryPercentage(float battery)
+        {
+            return Math.Truncate((battery / MaxRechargeDuration) * 100);
         }
     }
 }
