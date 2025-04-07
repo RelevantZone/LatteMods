@@ -18,13 +18,13 @@
         public override float Weight { get; set; }
         public override float Damage { get; set; }
         public override byte ClipSize { get; set; } = 2;
-        public override AttachmentName[] Attachments { get; set; } = new AttachmentName[5] {
-            AttachmentName.ScopeSight,
+        public override AttachmentName[] Attachments { get; set; } = [
+            AttachmentName.NightVisionSight,
             AttachmentName.Laser,
             AttachmentName.ExtendedBarrel,
             AttachmentName.SoundSuppressor,
             AttachmentName.AmmoCounter,
-        };
+        ];
         public override SpawnProperties SpawnProperties { get; set; } = new SpawnProperties
         {
             RoomSpawnPoints =
@@ -48,7 +48,7 @@
         public float DamageModifier = 12.5f;
 
         [Description("The amount of damage that will be multiplied for SCPs, defaults to 5f")]
-        public Dictionary<RoleTypeId, float> ScpDamageModifiers = new Dictionary<RoleTypeId, float>
+        public Dictionary<RoleTypeId, float> ScpDamageModifiers = new()
         {
             [RoleTypeId.Scp0492] = 8.5f,
             [RoleTypeId.Scp173] = 0.5f,

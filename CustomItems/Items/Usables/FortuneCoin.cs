@@ -91,19 +91,19 @@
             RoleTypeId.Scp939
         ];
 
-        protected override void SubscribeEvents()
-        {
-            Events.Player.FlippingCoin += OnFlippingCoin;
+        //protected override void SubscribeEvents()
+        //{
+        //    Events.Player.FlippingCoin += OnFlippingCoin;
 
-            base.SubscribeEvents();
-        }
+        //    base.SubscribeEvents();
+        //}
 
-        protected override void UnsubscribeEvents()
-        {
-            Events.Player.FlippingCoin -= OnFlippingCoin;
+        //protected override void UnsubscribeEvents()
+        //{
+        //    Events.Player.FlippingCoin -= OnFlippingCoin;
 
-            base.UnsubscribeEvents();
-        }
+        //    base.UnsubscribeEvents();
+        //}
 
         private void OnFlippingCoin(FlippingCoinEventArgs ev)
         {

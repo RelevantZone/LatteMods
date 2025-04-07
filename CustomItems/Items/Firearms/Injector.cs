@@ -7,6 +7,7 @@
     using Exiled.API.Features.Spawn;
     using Exiled.CustomItems.API.Features;
     using Exiled.Events.EventArgs.Player;
+    using InventorySystem.Items.Firearms.Attachments;
     using YamlDotNet.Serialization;
 
     [CustomItem(ItemType.GunFSP9)]
@@ -47,6 +48,13 @@
                 }
             },
         };
+
+        public override AttachmentName[] Attachments { get; set; } = 
+        [
+            AttachmentName.SoundSuppressor,
+            AttachmentName.Laser,
+            AttachmentName.DotSight
+        ];
 
         protected override void SubscribeEvents()
         {

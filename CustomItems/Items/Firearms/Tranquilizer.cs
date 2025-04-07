@@ -34,12 +34,12 @@
         public override float Damage { get; set; } = 0.5f;
         public override float Weight { get; set; }
         public override byte ClipSize { get; set; } = 10;
-        public override AttachmentName[] Attachments { get; set; } = new AttachmentName[3]
-        {
+        public override AttachmentName[] Attachments { get; set; } = 
+        [
             AttachmentName.SoundSuppressor,
             AttachmentName.DotSight,
             AttachmentName.Laser
-        };
+        ];
         public override SpawnProperties SpawnProperties { get; set; } = new SpawnProperties
         {
             RoomSpawnPoints =

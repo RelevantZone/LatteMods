@@ -16,6 +16,7 @@
     using YamlDotNet.Serialization;
     using InventorySystem.Items.Usables;
     using UnityEngine;
+    using MEC;
 
     [CustomItem(ItemType.GunCOM18)]
     public class Axiom : CustomWeapon
@@ -92,19 +93,14 @@
 
         protected override void OnReloading(ReloadingWeaponEventArgs ev)
         {
-            Log.Info($"{nameof(Axiom)}: Tracked reloading weapon");
             if (_loaded.ContainsKey(ev.Firearm.Serial))
             {
                 ev.IsAllowed = false;
                 return;
             }
 
-            Log.Info($"{nameof(Axiom)}: Invoked reloading for weapon");
-            
             if (UseGrenades)
             {
-                Log.Info($"{nameof(Axiom)}: Using grenades as substitute for weapon ammunition");
-
                 ProjectileType type = ProjectileType.None;
 
                 foreach (var item in ev.Player.Items)
@@ -119,7 +115,6 @@
 
                 if (type == ProjectileType.None)
                 {
-                    Log.Info($"{nameof(Axiom)}: Initiated reloading sequence, but no ammunition was found");
                     ev.IsAllowed = false;
                 }
             }
@@ -152,13 +147,20 @@
                 }
 
                 _loaded.Remove(ev.Item.Serial);
-                ev.Player.ShowHitMarker(size: 3);
             }
         }
 
         protected override void OnHurting(HurtingEventArgs ev)
         {
             ev.IsAllowed = false;
+        }
+
+        private void OnDryfiring(DryfiringWeaponEventArgs ev)
+        {
+            if (! Check(ev.Firearm))
+            {
+                return;
+            }
         }
 
         internal bool TryGetProjectile(Item item, out ProjectileType type)
