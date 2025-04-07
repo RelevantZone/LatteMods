@@ -1,4 +1,4 @@
-﻿namespace CustomItems.Items.Usables
+﻿namespace LatteMods.CustomItems.Items.Usables
 {
     using System.Collections.Generic;
     using System.ComponentModel;

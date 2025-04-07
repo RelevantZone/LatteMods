@@ -1,4 +1,4 @@
-﻿namespace CustomItems.Items.Grenades
+﻿namespace LatteMods.CustomItems.Items.Grenades
 {
     using System.ComponentModel;
     using Exiled.API.Features;

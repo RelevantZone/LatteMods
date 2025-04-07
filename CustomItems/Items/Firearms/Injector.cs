@@ -1,4 +1,4 @@
-﻿namespace CustomItems.Items.Firearms
+﻿namespace LatteMods.CustomItems.Items.Firearms
 {
     using System.Collections.Generic;
     using Exiled.API.Features;

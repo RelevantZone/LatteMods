@@ -1,4 +1,4 @@
-﻿namespace CustomItems.Commands
+﻿namespace LatteMods.CustomItems.Commands
 {
     using System;
     using System.Linq;

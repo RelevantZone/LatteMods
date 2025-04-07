@@ -1,4 +1,4 @@
-﻿namespace CustomItems.Items.Consumables
+﻿namespace LatteMods.CustomItems.Items.Consumables
 {
     using CustomPlayerEffects;
     using Exiled.API.Features;

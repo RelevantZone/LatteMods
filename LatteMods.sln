@@ -5,7 +5,7 @@ VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LatteMods.CustomItems", "CustomItems\LatteMods.CustomItems.csproj", "{B8B43A50-D8B2-41CC-8EE5-EE1E96E39FA9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RickyTools", "RickyTools\RickyTools.csproj", "{BA109087-D3F9-448A-A8B6-E6341E4B1BC7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LatteMods.RickyTools", "RickyTools\LatteMods.RickyTools.csproj", "{BA109087-D3F9-448A-A8B6-E6341E4B1BC7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

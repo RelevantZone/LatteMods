@@ -1,4 +1,4 @@
-﻿namespace CustomItems.Configs
+﻿namespace LatteMods.CustomItems.Configs
 {
     using System;
     using System.Collections.Generic;

@@ -1,4 +1,4 @@
-﻿namespace CustomItems.Items.Firearms
+﻿namespace LatteMods.CustomItems.Items.Firearms
 {
     using System;
     using System.Collections.Generic;

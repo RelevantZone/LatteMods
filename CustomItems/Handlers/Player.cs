@@ -1,4 +1,4 @@
-﻿namespace CustomItems.Handlers
+﻿namespace LatteMods.CustomItems.Handlers
 {
     using System;
     using Exiled.API.Features;
@@ -31,17 +31,11 @@
 
         private void OnShooting(ShootingEventArgs ev)
         {
-            if (CustomItem.TryGet(ev.Item, out var customItem) && customItem is CustomWeapon firearm)
+            if (CustomItem.TryGet(ev.Firearm, out CustomItem item) &&
+                item is CustomWeapon firearm &&
+                ev.Firearm.TotalAmmo > firearm.ClipSize)
             {
-                if (ev.Firearm.TotalAmmo > firearm.ClipSize)
-                {
-                    int num1 = Math.Max(ev.Firearm.TotalAmmo - (firearm.ClipSize - 1), 0);
-                    if (num1 > 0)
-                    {
-                        ev.Player.AddAmmo(ev.Firearm.AmmoType, (ushort)(ev.Firearm.MagazineAmmo - num1));
-                    }
-                    ev.Firearm.MagazineAmmo = num1;
-                }
+                ev.Firearm.MagazineAmmo = Math.Max(firearm.ClipSize - 1, 0);
             }
         }
     }

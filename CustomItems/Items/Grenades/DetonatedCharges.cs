@@ -1,4 +1,4 @@
-﻿namespace CustomItems.Items.Grenades
+﻿namespace LatteMods.CustomItems.Items.Grenades
 {
     using System.Collections.Generic;
     using System.ComponentModel;

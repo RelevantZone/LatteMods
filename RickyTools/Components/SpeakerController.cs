@@ -1,4 +1,4 @@
-﻿namespace RickyTools.Components
+﻿namespace LatteMods.RickyTools.Components
 {
     using AdminToys;
     using Exiled.API.Features.Toys;

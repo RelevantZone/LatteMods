@@ -1,5 +1,6 @@
-﻿namespace CustomItems
+﻿namespace LatteMods.CustomItems
 {
+    using System;
     using System.ComponentModel;
     using System.Linq;
     using Exiled.API.Enums;
@@ -15,10 +16,10 @@
         public override string Prefix => "LatteMods.CustomItems";
         public override string Author => "RelevantZone";
         public override PluginPriority Priority => PluginPriority.Medium;
+        public override Version Version => new Version(1, 0, 1);
 
         public override void OnEnabled()
         {
-            Log.Info($"{Prefix} is enabling main plugin");
             PlayerEvent = new Handlers.Player();
 
             PlayerEvent.SubscribeEvents();
@@ -29,13 +30,11 @@
 
         public override void OnReloaded()
         {
-            Log.Info($"{Prefix} is reloaded");
             base.OnReloaded();
         }
 
         public override void OnDisabled()
         {
-            Log.Info($"{Prefix} is disabled");
             PlayerEvent.UnsubscribeEvents();
 
             UnregisterItems();

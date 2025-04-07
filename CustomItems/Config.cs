@@ -1,4 +1,4 @@
-﻿namespace CustomItems
+﻿namespace LatteMods.CustomItems
 {
     using System.ComponentModel;
     using System.IO;
