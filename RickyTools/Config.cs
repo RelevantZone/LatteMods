@@ -35,13 +35,5 @@
         {
             File.WriteAllText(GetConfigPath(config), Loader.Serializer.Serialize(config));
         }
-
-        // Configs
-        public Configs.Items ItemsConfig { get; set; }
-
-        public void LoadConfigs()
-        {
-            ItemsConfig = ReadConfig<Configs.Items>();
-        }
     }
 }

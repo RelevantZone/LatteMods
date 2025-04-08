@@ -9,24 +9,13 @@
     using Exiled.API.Features.Items;
     using Exiled.API.Features.Spawn;
     using Exiled.CustomItems.API.Features;
-    using Exiled.Events.EventArgs.Player;
-    using Exiled.Events.EventArgs.Scp096;
-    using Exiled.Events.EventArgs.Server;
     using MEC;
-    using PlayerRoles.FirstPersonControl.Thirdperson.Subcontrollers;
-    using Utils.NonAllocLINQ;
-    using YamlDotNet.Serialization;
-    using Events = Exiled.Events.Handlers;
 
     [CustomItem(ItemType.SCP1344)]
     public class Scrambler : CustomItem
     {
-        private readonly string _playerSessionKey = $"Player{nameof(Scrambler)}Serial";
-        private readonly List<Item> actives = new List<Item>();
-        private readonly Dictionary<int, float> batteries = new Dictionary<int, float>();
-
-        [YamlIgnore]
-        public readonly List<CoroutineHandle> coroutines = new List<CoroutineHandle>();
+        private readonly Dictionary<int, float> batteries = [];
+        private readonly List<CoroutineHandle> coroutines = [];
 
         public override uint Id { get; set; } = 4101;
         public override string Name { get; set; } = "ENOCH <color=red>\"FOX\"</color> SCRAMBLER";
@@ -44,11 +33,11 @@
             //}
         };
 
-        public Broadcast MinimumBattery = new Broadcast("Scrambler battery is too <color=red>low</color>!");
+        public Broadcast MinimumBattery = new("Scrambler battery is too <color=red>low</color>!");
 
-        public Broadcast RemainingBattery = new Broadcast("Scrambler battery is currently charged at <b><color={1}>{0}%</color></b>{2}", 5);
+        public Broadcast RemainingBattery = new("Scrambler battery is currently charged at <b><color={1}>{0}%</color></b>", 5);
 
-        public Broadcast UnequipScrambler = new Broadcast("<color=yellow>Scrambler</color> has been deactivated", 3);
+        public Broadcast UnequipScrambler = new("<color=yellow>Scrambler</color> has been deactivated", 3);
 
         [Description("How long does it take to recharge from zero to max battery.")]
         public float MaxRechargeDuration = 120f;
@@ -65,222 +54,56 @@
         [Description("The percentage of battery that will be charged for first-time use")]
         public float DefaultBattery = 0.5f;
 
-        //protected override void SubscribeEvents()
-        //{
-        //    Events.Server.RoundEnded += OnRoundEnded;
-        //    Events.Scp096.AddingTarget += OnAddingTarget;
-        //    Events.Player.UsingItem += OnUsingItem;
-        //    Events.Player.UsingItemCompleted += OnUsingItemCompleted;
-        //    //Events.Player.ChangingItem += OnChangingItem;
 
-        //    base.SubscribeEvents();
-        //}
 
-        //protected override void UnsubscribeEvents()
-        //{
-        //    Events.Server.RoundEnded -= OnRoundEnded;
-        //    Events.Scp096.AddingTarget -= OnAddingTarget;
-        //    Events.Player.UsingItem -= OnUsingItem;
-        //    Events.Player.UsingItemCompleted -= OnUsingItemCompleted;
-        //    //Events.Player.ChangingItem -= OnChangingItem;
 
-        //    base.UnsubscribeEvents();
-        //}
-
-        //protected override void OnDroppingItem(DroppingItemEventArgs ev)
-        //{
-        //    if (actives.Contains(ev.Item))
-        //    {
-        //        actives.Remove(ev.Item);
-        //        ev.Player.SessionVariables.Remove(_playerSessionKey);
-        //        ev.Player.ReferenceHub.DisableWearables(WearableElements.Scp1344Goggles);
-        //    }
-        //}
-
-        //protected override void OnChanging(ChangingItemEventArgs ev)
-        //{
-        //    if (Check(ev.Item))
-        //    {
-        //        ShowRemainingBattery(ev.Player, ev.Item.Serial, showDescription: true);
-        //    };
-        //}
-
-        //protected override void OnAcquired(Player player, Item item, bool displayMessage)
-        //{
-        //    if (! batteries.ContainsKey(item.Serial))
-        //    {
-        //        GetRemainingBattery(item.Serial);
-        //        Timing.RunCoroutine(Update(item), item.Base.gameObject);
-        //    }
-
-        //    base.OnAcquired(player, item, displayMessage);
-        //}
-
-        private void OnRoundEnded(RoundEndedEventArgs ev)
+        protected override void OnWaitingForPlayers()
         {
-            foreach (var coroutine in coroutines)
-            {
-                Timing.KillCoroutines(coroutine);
-            }
-
+            batteries.Clear();
             coroutines.Clear();
         }
 
-        private void OnAddingTarget(AddingTargetEventArgs ev)
+        protected override void OnAcquired(Player player, Item item, bool displayMessage)
         {
-            if (IsActive(ev.Player) && ev.IsLooking)
+            if (! batteries.ContainsKey(item.Serial))
             {
-                ev.IsAllowed = false;
-                return;
+                batteries.Add(item.Serial, MaxRechargeDuration);
             }
+
+            base.OnAcquired(player, item, displayMessage);
         }
 
-        private void OnUsingItem(UsingItemEventArgs ev)
+        protected override void ShowSelectedMessage(Player player)
         {
-            if (! Check(ev.Item))
-            {
-                return;
-            }
-
-            if (TryGetActiveItem(ev.Player, out var item))
-            {
-                ev.IsAllowed = false;
-                actives.Remove(item);
-                ev.Player.SessionVariables.Remove(_playerSessionKey);
-                ev.Player.ReferenceHub.DisableWearables(WearableElements.Scp1344Goggles);
-                return;
-            }
-
-            if (GetBatteryPercentage(GetRemainingBattery(ev.Item.Serial)) <= MinimumBatteryForUse)
-            {
-                ev.IsAllowed = false;
-                ev.Player.ShowHint(new Hint(MinimumBattery.Content));
-            }
+            ShowRemainingBattery(player, batteries.FirstOrDefault(x => x.Key == player.CurrentItem.Serial).Value);
         }
 
-        private void OnUsingItemCompleted(UsingItemCompletedEventArgs ev)
-        {
-            if (!Check(ev.Item))
-            {
-                return;
-            }
 
-            ev.IsAllowed = false;
-            actives.Add(ev.Item);
-            ev.Player.SessionVariables.Add(_playerSessionKey, ev.Item.Serial);
-            ev.Player.ReferenceHub.EnableWearables(WearableElements.Scp1344Goggles);
+
+
+        private void ShowRemainingBattery(Player player, float battery)
+        {
+            player.ShowHint(string.Format(RemainingBattery.Content, GetBatteryPercentage(battery)));
         }
 
-        private IEnumerator<float> Update(Item item)
+        private double GetBatteryPercentage(int serial)
         {
-            while (true)
+            if (! batteries.TryGetValue(serial, out var battery))
             {
-                ProcessBattery(item);
-
-                var battery = GetRemainingBattery(item.Serial);
-
-                if (IsActive(item) && battery <= 0)
-                {
-                    batteries[item.Serial] = 0;
-                    actives.Remove(item);
-                    item.Owner.SessionVariables.Remove(_playerSessionKey);
-                    item.Owner.ReferenceHub.DisableWearables(WearableElements.Scp1344Goggles);
-                }
-
-                yield return Timing.WaitForOneFrame;
+                return 0;
             }
+
+            return GetBatteryPercentage(battery);
         }
 
-        private void ProcessBattery(Item item)
+        private double GetBatteryPercentage(float value)
         {
-            var battery = GetRemainingBattery(item.Serial);
-            if (IsActive(item))
-            {
-                var num = DrainMultiplier;
-                if (DrainInPercentage)
-                {
-                    num = MaxRechargeDuration * DrainMultiplier;
-                }
-
-                battery -= num;
-                ShowRemainingBattery(item.Owner, battery);
-            } else
-            {
-                battery += 1f;
-            }
-
-            batteries[item.Serial] = battery;
+            return Math.Truncate((value / MaxRechargeDuration) * 100);
         }
 
-        private void ShowRemainingBattery(Player player, float battery, bool showDescription = false)
+        private IEnumerator<float> Update()
         {
-            var percentage = GetBatteryPercentage(battery);
-            var color = "green";
-            if (percentage >= MinimumBatteryForUse && percentage < 80)
-            {
-                color = "yellow";
-            }
-            else if (percentage < MinimumBatteryForUse)
-            {
-                color = "red";
-            }
 
-            if (RemainingBattery.Show)
-            {
-                player.ShowHint(new Hint(string.Format(RemainingBattery.Content, percentage, color, showDescription ? $"\n{Description}" : "")));
-            }
-        }
-
-        private bool IsActive(Item item)
-        {
-            if (item.Owner != null) return IsActive(item.Owner);
-            return false;
-        }
-
-        private bool IsActive(Player player)
-        {
-            if (player.TryGetSessionVariable(_playerSessionKey, out int serial) && actives.Any(x => x.Serial == serial))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool TryGetActiveItem(Player player, out Item item)
-        {
-            if (player.TryGetSessionVariable(_playerSessionKey, out int serial) && actives.TryGetFirst(x => x.Serial == serial, out item))
-            {
-                return true;
-            }
-
-            item = null;
-            return false;
-        }
-
-        private Item GetActiveItem(Player player)
-        {
-            if (player.TryGetSessionVariable(_playerSessionKey, out int serial) && actives.TryGetFirst(x => x.Serial == serial, out Item item))
-            {
-                return item;
-            }
-
-            return null;
-        }
-
-        private float GetRemainingBattery(ushort serial)
-        {
-            if (!batteries.TryGetValue(serial, out var battery))
-            {
-                battery = MaxRechargeDuration * DefaultBattery;
-                batteries[serial] = battery;
-            }
-            return battery;
-        }
-
-        private double GetBatteryPercentage(float battery)
-        {
-            return Math.Truncate((battery / MaxRechargeDuration) * 100);
         }
     }
 }

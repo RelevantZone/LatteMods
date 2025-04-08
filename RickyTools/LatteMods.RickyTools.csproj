@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
 	<LangVersion>12</LangVersion>
-	<Platforms>AnyCPU;x64</Platforms>
+	<OutputType>Library</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -42,7 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Modes\" />
+    <Folder Include="Effects\" />
     <Folder Include="Extensions\" />
   </ItemGroup>
 

@@ -1,14 +1,13 @@
 ﻿namespace LatteMods.CustomItems.Items.Consumables
 {
-    using CustomPlayerEffects;
     using Exiled.API.Features;
     using Exiled.API.Features.Attributes;
     using Exiled.API.Features.Roles;
     using Exiled.API.Features.Spawn;
     using Exiled.CustomItems.API.Features;
     using Exiled.Events.EventArgs.Player;
-    using YamlDotNet.Serialization;
     using Events = Exiled.Events.Handlers;
+
     [CustomItem(ItemType.Adrenaline)]
     public class LethalInjection : CustomItem
     {

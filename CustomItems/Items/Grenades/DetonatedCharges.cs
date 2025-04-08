@@ -139,7 +139,7 @@
                     return;
                 }
 
-                ev.Player.ShowHint(new Hint("Press ALT+I to detonate charges remotely"));
+                ev.Player.ShowHint(new Hint("Press ALT to detonate charges remotely"));
             }
         }
 

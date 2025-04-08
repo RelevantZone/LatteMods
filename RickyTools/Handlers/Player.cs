@@ -4,9 +4,9 @@
     using Exiled.CustomItems.API.Features;
     using Exiled.Events.EventArgs.Player;
 
-    public static class Player
+    public class Player
     {
-        public static void OnEscaping(EscapingEventArgs ev)
+        public void OnEscaping(EscapingEventArgs ev)
         {
             if (! (ev.Player != null && ev.Player.IsAlive && ev.Player.Role.Side != Exiled.API.Enums.Side.Scp))
             {
@@ -27,7 +27,7 @@
             }
         }
 
-        public static void OnShooting(ShootingEventArgs ev)
+        public void OnShooting(ShootingEventArgs ev)
         {
             if (CustomItem.TryGet(ev.Firearm, out CustomItem item) && 
                 item is CustomWeapon firearm && 
