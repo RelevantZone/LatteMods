@@ -100,10 +100,5 @@
         {
             return Math.Truncate((value / MaxRechargeDuration) * 100);
         }
-
-        private IEnumerator<float> Update()
-        {
-
-        }
     }
 }

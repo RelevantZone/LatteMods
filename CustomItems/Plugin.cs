@@ -16,7 +16,7 @@
         public override string Prefix => "LatteMods.CustomItems";
         public override string Author => "RelevantZone";
         public override PluginPriority Priority => PluginPriority.Medium;
-        public override Version Version => new Version(1, 0, 1);
+        public override Version Version => new Version(1, 0, 4);
 
         public override void OnEnabled()
         {
